@@ -15,12 +15,12 @@ jobs:
       deploy:
         provider: npm
         skip_cleanup: true
-        email: <npm-email>
+        email: elviswolcott@gmail.com
         api_key:
-          secure: <get-from-travis-encrypt>
+          secure: "OzSFApat4wXEQUZSQvnAAEXo9Vir4F4C8wDlsCvy1qAyGMfUoZNxDYhPC/0EQRJs2QCpm/r7buUAnGvPuCnZ54feeAsfUih/WgisgtFHrK+y6etKuYFDllEUIdW0xf7hsYjQ7PYblTS3qEf3xrNrK4nDykIGfkyIoDkffo2Oig4XysaNVr+lB5GKilt+jbVguaChxRfA9Xi6IGjs2AxgAMXNHhr6BPXq7Ni+aiT5efAhzvDT8I9bHV/ffWkkL4QVNpK2jZNTLD+BNWnTPQIyEEFY/g3g5eHGKgG0ApFLhBUfgZEGibFkP/QbeOAHBora0SygDCiy6N/BOSOPJ1cEKTlK2rIqaTkzH5RrNil9pHPFH2XyOX/K7F8r49WhMfpWLeHDa8EJp2Xg3tRLWcKVt5zTdxt/6gJg59/FtvUBtP9zjEwun3sUwqlVAy6gs4AdITZ+ZsJSYoG15uF62T3d8EvNZk0wHJSsQ7fK349Pk10NTC0DVoQaZosX9Kf1Qm3txVTPGtSyAJlfdgtJj4aC21cAaRavEWNUd1EROmz7jH4gBPMhigPFVGp2HAheD8I1IShymrZK332T7aqFWTMOg2MRXxQ3bX/6mrTDX1M6CN6RKXO+se8hLmSe3mC7W/a8lWG0kCdbRoRkIskR70iZR0M+hrPg7s2mNjR8yVwNZK8="
         on:
           tags: true
-          repo: <username>/<project>
+          repo: elviswolcott/stockfish-native
           branch: master
 stages:
   - test

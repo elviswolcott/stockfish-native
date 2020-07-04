@@ -1,8 +1,19 @@
-[![Travis (.com)](https://img.shields.io/travis/com/<user>/<repo>?logo=travis)](https://travis-ci.com/<user>/<repo>)
-[![npm](https://img.shields.io/npm/v/<package>?label=<package>&logo=npm)](https://www.npmjs.com/package/<package>)
-# <package-name>
+[![Travis (.com)](https://img.shields.io/travis/com/elviswolcott/stockfish-native?logo=travis)](https://travis-ci.com/elviswolcott/stockfish-native)
+[![npm](https://img.shields.io/npm/v/stockfish-native?label=stockfish-native&logo=npm)](https://www.npmjs.com/package/stockfish-native)
+# stockfish-native
 
-> tagline
+> UCI interface for native Stockfish
+
+# Installation
+
+```bash
+npm install stockfish-native
+```
+
+Download or build the [Stockfish](https://stockfishchess.org/download/) engine from source.
+If necessary, mark the binary as executable.
+
+# Development
 
 ## Available Scripts
 
@@ -27,11 +38,3 @@ Checks code for style issues and syntax errors with TSLint and Prettier, attempt
 ## Publishing a new version
 
 Travis is configured to run deploys on tags.
-
-## Initial Setup
-
-1. Edit `README.md` so the badges point to your repository
-1. Edit `.travis.yml` so the repository and npm credentials match your project
-    * Encrypting your NPM token requires the Travis CLI
-1. Edit `package.json` so that the package name, author, and repository match your project
-1. Disable `build config validation` in the Travis CI settings for the repository
