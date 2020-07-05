@@ -5,7 +5,9 @@ os: linux
 jobs:
   include:
     - stage: test
-      script: npm test
+      script:
+        - ./linux-stockfish.sh
+        - npm test
     - stage: lint
       script: npm run lint
     - stage: release
