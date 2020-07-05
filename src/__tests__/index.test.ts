@@ -1,7 +1,14 @@
-import { hello } from "../index";
+import Stockfish from "../index";
 
-describe("hello world", () => {
-  it('should return "Hello world."', () => {
-    expect(hello()).toBe("Hello world.");
+let engine: Stockfish;
+
+beforeEach(() => {
+  engine = new Stockfish("./stockfish/engine");
+});
+
+describe("Stockfish", () => {
+  it("errors commands after quitting", async () => {
+    await engine.quit();
+    expect(engine.eval()).rejects.toThrow();
   });
 });
