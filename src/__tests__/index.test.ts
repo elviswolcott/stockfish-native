@@ -17,7 +17,6 @@ describe("Stockfish", () => {
   });
   it("can evaluate positions", async () => {
     const evaluation = await engine.eval();
-    console.log(evaluation);
     expect(evaluation.score).toBeGreaterThan(0);
   });
 });
