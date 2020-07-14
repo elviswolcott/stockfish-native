@@ -1,11 +1,20 @@
 import { spawn, ChildProcessWithoutNullStreams } from "child_process";
 import { EOL } from "os";
+import {
+  split,
+  endAfterLabel,
+  lines,
+  sections,
+  parseLabeled,
+  trim,
+} from "./parser-utils";
 
 type Command = string | null;
 
 interface QueueEntry {
   command: Command;
-  callback: (result: string) => boolean;
+  callback: InjestResponse;
+  immediate: boolean;
 }
 
 type Score = number | null;
@@ -30,12 +39,20 @@ interface Evaluation {
   score: Score;
 }
 
-const splitClean = (text: string, delimeter: string | RegExp): string[] => {
-  return text.split(delimeter).map((s) => s.trim());
-};
-
 type InjestResponse = (response: string) => boolean;
 type UCIListener = (response: string) => string;
+
+interface Position {
+  start: string;
+  moves: string[];
+}
+
+interface Board {
+  Fen: string;
+  Key: string;
+  Checkers: string;
+  pieces: string[][];
+}
 
 class Stockfish {
   // commands are queued as only 1 can execute at a time
@@ -61,7 +78,6 @@ class Stockfish {
     // update response from stdout
     this.engine.stdout.on("data", (data: string | Buffer) => {
       this.partialResponse += data;
-      console.log(this.partialResponse);
       this.partialResponse = this.listener
         ? this.listener(this.partialResponse)
         : this.partialResponse;
@@ -76,17 +92,14 @@ class Stockfish {
     );
   }
   async eval(): Promise<Evaluation> {
-    const rawResponse = await this.do(
-      `eval`,
-      (response) => response.indexOf(`Total evaluation:`) > -1
-    );
+    const response = await this.do(`eval`, endAfterLabel("Total evaluation"));
     // parse response
     const parsed = {} as EvaluationDetails;
-    const lines = rawResponse.split(EOL);
-    const [rawHeadings, rawHeadingsL2, , ...content] = lines;
-    const [, ...headings] = splitClean(rawHeadings, "|");
-    const [, ...headingsL2] = splitClean(rawHeadingsL2, "|").map((group) =>
-      splitClean(group, /\s+/g)
+    const [table, data] = sections(response);
+    const [rawHeadings, rawHeadingsL2, , ...content] = lines(table);
+    const [, ...headings] = split(rawHeadings, "|");
+    const [, ...headingsL2] = split(rawHeadingsL2, "|").map((group) =>
+      split(group, /\s+/g)
     );
 
     for (const line of content) {
@@ -95,9 +108,9 @@ class Stockfish {
         line.indexOf("------------+-------------+-------------+------------") <
         0
       ) {
-        const [term, ...columns] = splitClean(line, "|");
+        const [term, ...columns] = split(line, "|");
         for (const index in columns) {
-          const column = splitClean(columns[index], /\s+/g).map((val) =>
+          const column = split(columns[index], /\s+/g).map((val) =>
             val === "----" ? null : parseFloat(val)
           );
           const l1 = headings[index];
@@ -112,15 +125,42 @@ class Stockfish {
         }
       }
     }
-    const totalEvaluation =
-      (rawResponse.match(/Total evaluation: (.*)\n/) || [])[1] || null;
+    const labeled = parseLabeled(data);
     const totalScore = parseFloat(
-      (totalEvaluation?.match(/([-.\d]*)/) || [])[1]
+      (labeled["Total evaluation"].match(/([-.\d]*)/) || [])[1]
     );
     return {
       detailed: parsed,
       score: totalScore === totalScore ? totalScore : null,
     };
+  }
+  async position(position?: Partial<Position>): Promise<void> {
+    const completePosition: Position = {
+      moves: [],
+      start: "startpos",
+      ...(position || {}),
+    };
+    await this.do(
+      `position ${
+        completePosition.start === "startpos"
+          ? "startpos"
+          : `fen ${completePosition.start}`
+      } moves ${completePosition.moves.join(" ")}`,
+      null
+    );
+    return;
+  }
+  async board(): Promise<Board> {
+    const rawResponse = await this.do(`d`, endAfterLabel("Checkers"));
+    const [board, data] = split(rawResponse, "\n\n");
+    const labled = parseLabeled(data);
+    const pieces = split(board, "\n")
+      .filter((line) => line.indexOf(" ") > 0)
+      .map((line) => split(trim(line, "\\|"), "|"));
+    return {
+      ...labled,
+      pieces,
+    } as Board;
   }
   async quit(): Promise<void> {
     await this.do(`quit`, () => true);
@@ -134,12 +174,16 @@ class Stockfish {
     this.engine.kill("SIGINT");
   }
   // send a raw command to the engine and get the raw response
-  private do(command: Command, done: InjestResponse): Promise<string> {
+  private do(command: Command, done: InjestResponse | null): Promise<string> {
     if (this.didQuit) {
       throw new Error("Cannot perform commands after calling quit()");
     }
     return new Promise((resolve) => {
       const callback: InjestResponse = (result) => {
+        if (done === null) {
+          resolve("");
+          return true;
+        }
         // resolve when the completion check returns true
         if (done(result)) {
           resolve(result);
@@ -151,6 +195,7 @@ class Stockfish {
       this.queue.push({
         command,
         callback,
+        immediate: done === null,
       });
       this.advanceQueue();
     });
@@ -163,23 +208,31 @@ class Stockfish {
     }
     // operate FIFO
     const current = this.queue.shift();
-    if (current) {
+    if (current !== null && current !== undefined) {
       this.running = true;
-      this.listener = (response: string): string => {
-        // pass the collected response to the callback
-        if (current.callback(response)) {
-          // true means the response was accepted as complete
-          // restart on the next entry
-          this.running = false;
-          this.advanceQueue();
-          // clear response
-          return "";
-        }
-        return response;
-      };
+      if (!current.immediate) {
+        this.listener = (response: string): string => {
+          // pass the collected response to the callback
+          if (current.callback(response)) {
+            // true means the response was accepted as complete
+            // restart on the next entry
+            this.running = false;
+            this.advanceQueue();
+            // clear response
+            return "";
+          }
+          return response;
+        };
+      }
       // send the uci string
       if (current.command) {
         this.engine.stdin.write(`${current.command}${EOL}`);
+      }
+      // null indicates a command without a response
+      if (current.immediate) {
+        this.running = false;
+        current.callback("");
+        this.advanceQueue();
       }
     }
   }
