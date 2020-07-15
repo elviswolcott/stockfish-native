@@ -18,6 +18,34 @@ describe("Stockfish", () => {
     await engine.quit();
     expect(engine.eval()).rejects.toThrow();
   });
+  it("supports options", async () => {
+    // not sure of a good way to test this that wouldn't be flaky
+    const anotherEngine = new Stockfish("./stockfish/engine", {
+      "Debug Log File": "/dev/null",
+      Contempt: -20,
+      "Analysis Contempt": "Both",
+      Threads: 1,
+      Hash: 1,
+      Ponder: true,
+      MultiPV: 1,
+      "Skill Level": 10,
+      "Move Overhead": 30,
+      "Minimum Thinking Time": 0,
+      "Slow Mover": 10,
+      nodestime: 16,
+      // eslint-disable-next-line @typescript-eslint/camelcase
+      UCI_Chess960: false,
+      // eslint-disable-next-line @typescript-eslint/camelcase
+      UCI_AnalyseMode: true,
+      // eslint-disable-next-line @typescript-eslint/camelcase
+      UCI_LimitStrength: true,
+      // eslint-disable-next-line @typescript-eslint/camelcase
+      UCI_Elo: 1450,
+    });
+    const position = await anotherEngine.board();
+    expect(position.Fen).toBe(STARTPOS);
+    await anotherEngine.kill();
+  });
 });
 
 describe("eval()", () => {

@@ -54,6 +54,29 @@ interface Board {
   pieces: string[][];
 }
 
+type StockfishOptions = Partial<{
+  "Debug Log File": string;
+  Contempt: number;
+  "Analysis Contempt": "Both" | "Off" | "White" | "Black" | "Both";
+  Threads: number;
+  Hash: number;
+  Ponder: boolean;
+  MultiPV: number;
+  "Skill Level": number;
+  "Move Overhead": number;
+  "Minimum Thinking Time": number;
+  "Slow Mover": number;
+  nodestime: number;
+  UCI_Chess960: boolean;
+  UCI_AnalyseMode: boolean;
+  UCI_LimitStrength: boolean;
+  UCI_Elo: number;
+  SyzygyPath: string;
+  SyzygyProbeDepth: number;
+  Syzygy50MoveRule: boolean;
+  SyzygyProbeLimit: number;
+}>;
+
 class Stockfish {
   // commands are queued as only 1 can execute at a time
   private queue: QueueEntry[] = [];
@@ -63,7 +86,7 @@ class Stockfish {
   private didQuit = false;
   private listener: null | UCIListener = null;
   // spawn the child process, queue setoption commands, and setup listeners
-  constructor(enginePath: string) {
+  constructor(enginePath: string, options: StockfishOptions = {}) {
     this.engine = spawn(enginePath);
     // when the process is closes, send a terminating newline to ensure all listeners are fired
     this.engine.on("close", () => {
@@ -90,6 +113,18 @@ class Stockfish {
           `Stockfish 11 64 POPCNT by T. Romstad, M. Costalba, J. Kiiski, G. Linscott`
         ) > -1
     );
+    for (const option in options) {
+      this.do(
+        `setoption name ${option} value ${
+          options[option as keyof StockfishOptions]
+        }`,
+        null
+      );
+    }
+    // TODO: set options
+    // send isready
+    this.do(`isready`, (response: string) => response.indexOf(`readyok`) > -1);
+    // although the contructor is sync, the next command will wait for everything to process
   }
   async eval(): Promise<Evaluation> {
     const response = await this.do(`eval`, endAfterLabel("Total evaluation"));
