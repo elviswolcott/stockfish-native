@@ -113,6 +113,7 @@ class Stockfish {
           `Stockfish 11 64 POPCNT by T. Romstad, M. Costalba, J. Kiiski, G. Linscott`
         ) > -1
     );
+    // set options
     for (const option in options) {
       this.do(
         `setoption name ${option} value ${
@@ -121,7 +122,6 @@ class Stockfish {
         null
       );
     }
-    // TODO: set options
     // send isready
     this.do(`isready`, (response: string) => response.indexOf(`readyok`) > -1);
     // although the contructor is sync, the next command will wait for everything to process
@@ -196,6 +196,9 @@ class Stockfish {
       ...labled,
       pieces,
     } as Board;
+  }
+  async newgame(): Promise<void> {
+    await this.do(`ucinewgame`, null);
   }
   async quit(): Promise<void> {
     await this.do(`quit`, () => true);

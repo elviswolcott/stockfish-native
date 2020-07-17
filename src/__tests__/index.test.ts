@@ -77,3 +77,11 @@ describe("position()", () => {
     expect(position.Fen).toBe(E4);
   });
 });
+
+describe("newgame()", () => {
+  it("runs", async () => {
+    await engine.newgame();
+    // engine provides no feedback, and spec says should work even if GUI never sends it
+    expect(true).toBe(true);
+  });
+});
