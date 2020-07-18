@@ -85,3 +85,21 @@ describe("newgame()", () => {
     expect(true).toBe(true);
   });
 });
+
+describe("search()", () => {
+  it("returns a valid move", async () => {
+    const bestMove = await engine.search({ depth: 1 });
+    expect(bestMove.length).toBe(4);
+  });
+  it("waits for stop while searching", async () => {
+    let start = 0;
+    setTimeout(() => {
+      start = new Date().getTime();
+      engine.stop();
+    }, 1e3 * 2);
+    const bestMove = await engine.search({ infinite: true });
+    const end = new Date().getTime();
+    expect(end - start).toBeLessThan(10);
+    expect(bestMove.length).toBe(4);
+  });
+});

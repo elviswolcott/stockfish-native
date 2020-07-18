@@ -77,6 +77,21 @@ type StockfishOptions = Partial<{
   SyzygyProbeLimit: number;
 }>;
 
+type SearchOptions = Partial<{
+  depth: number;
+  wtime: number;
+  btime: number;
+  winc: number;
+  binc: number;
+  movestogo: number;
+  nodes: number;
+  mate: number;
+  movetime: number;
+  infinite: boolean;
+  ponder: boolean;
+  searchmoves: string[];
+}>;
+
 class Stockfish {
   // commands are queued as only 1 can execute at a time
   private queue: QueueEntry[] = [];
@@ -125,6 +140,33 @@ class Stockfish {
     // send isready
     this.do(`isready`, (response: string) => response.indexOf(`readyok`) > -1);
     // although the contructor is sync, the next command will wait for everything to process
+  }
+  async search(options: SearchOptions): Promise<string> {
+    const { infinite, ponder, searchmoves, ...basicOptions } = options;
+    let command = `go`;
+    if (infinite) {
+      command += ` infinite`;
+    }
+    if (ponder) {
+      command += ` ponder`;
+    }
+    if (searchmoves) {
+      command += ` searchmoves ${searchmoves.join(" ")}`;
+    }
+    Object.entries(basicOptions).forEach(
+      ([name, value]) => ` ${name} ${value}`
+    );
+    const response = await this.do(
+      command,
+      (response: string) => response.indexOf(`bestmove`) > -1
+    );
+    const lines = split(response, "\n");
+    const last = lines[lines.length - 1];
+    return (last.match(/bestmove[\s]*([a-z,0-9]*)/) || [])[1];
+  }
+  stop(): void {
+    // bypass queuing
+    this.engine.stdin.write(`stop${EOL}`);
   }
   async eval(): Promise<Evaluation> {
     const response = await this.do(`eval`, endAfterLabel("Total evaluation"));
@@ -224,7 +266,7 @@ class Stockfish {
         }
         // resolve when the completion check returns true
         if (done(result)) {
-          resolve(result);
+          resolve(result.trim());
           return true;
         } else {
           return false;
