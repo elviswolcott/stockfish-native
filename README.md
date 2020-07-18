@@ -23,7 +23,7 @@ Most operations are asynchronous and return a promise. If a command is send befo
 ## Create an engine instance
 
 ```ts
-import { Stockfish } from "stockfish-native";
+import Stockfish from "stockfish-native";
 
 const engine = new Stockfish("/path/to/engine", options);
 ```
