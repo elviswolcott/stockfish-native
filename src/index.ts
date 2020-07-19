@@ -129,6 +129,10 @@ class Stockfish {
         ) > -1
     );
     // set options
+    this.setoptions(options);
+    // although the contructor is sync, the next command will wait for everything to process
+  }
+  async setoptions(options: StockfishOptions): Promise<void> {
     for (const option in options) {
       this.do(
         `setoption name ${option} value ${
@@ -138,8 +142,10 @@ class Stockfish {
       );
     }
     // send isready
-    this.do(`isready`, (response: string) => response.indexOf(`readyok`) > -1);
-    // although the contructor is sync, the next command will wait for everything to process
+    await this.do(
+      `isready`,
+      (response: string) => response.indexOf(`readyok`) > -1
+    );
   }
   async search(options: SearchOptions): Promise<string> {
     const { infinite, ponder, searchmoves, ...basicOptions } = options;

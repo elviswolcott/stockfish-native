@@ -1,5 +1,7 @@
 import Stockfish from "../index";
 
+// TODO: mock out the child process for better testing (particularly with options)
+
 const STARTPOS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 const E4 = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1";
 
@@ -101,5 +103,33 @@ describe("search()", () => {
     const end = new Date().getTime();
     expect(end - start).toBeLessThan(10);
     expect(bestMove.length).toBe(4);
+  });
+});
+
+describe("setoptions()", () => {
+  it("runs", async () => {
+    await engine.setoptions({
+      "Debug Log File": "/dev/null",
+      Contempt: -20,
+      "Analysis Contempt": "Both",
+      Threads: 1,
+      Hash: 1,
+      Ponder: true,
+      MultiPV: 1,
+      "Skill Level": 10,
+      "Move Overhead": 30,
+      "Minimum Thinking Time": 0,
+      "Slow Mover": 10,
+      nodestime: 16,
+      // eslint-disable-next-line @typescript-eslint/camelcase
+      UCI_Chess960: false,
+      // eslint-disable-next-line @typescript-eslint/camelcase
+      UCI_AnalyseMode: true,
+      // eslint-disable-next-line @typescript-eslint/camelcase
+      UCI_LimitStrength: true,
+      // eslint-disable-next-line @typescript-eslint/camelcase
+      UCI_Elo: 1450,
+    });
+    expect(true).toBe(true);
   });
 });
