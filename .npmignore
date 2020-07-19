@@ -1,4 +1,6 @@
 src
+stockfish
+linux-stockfish.sh
 .vscode
 tsconfig.json
 jestconfig.json
