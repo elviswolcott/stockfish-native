@@ -1,6 +1,6 @@
 {
   "name": "stockfish-native",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "UCI interface for native Stockfish",
   "main": "lib/index.js",
   "scripts": {
