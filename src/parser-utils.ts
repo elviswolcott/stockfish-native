@@ -11,7 +11,7 @@ export const split = (text: string, delimeter: string | RegExp): string[] => {
 };
 
 export const endAfterLabel = (label: string) => {
-  return (text: string): boolean => Boolean(text.match(`${label}: .*\n`));
+  return (text: string): boolean => Boolean(text.match(`${label}: .*${EOL}`));
 };
 
 export const sections = (content: string): string[] =>
