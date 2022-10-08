@@ -159,9 +159,9 @@ class Stockfish {
     if (searchmoves) {
       command += ` searchmoves ${searchmoves.join(" ")}`;
     }
-    Object.entries(basicOptions).forEach(
-      ([name, value]) => ` ${name} ${value}`
-    );
+    Object.entries(basicOptions).forEach(([name, value]) => {
+      command += ` ${name} ${value}`;
+    });
     const response = await this.do(
       command,
       (response: string) => response.indexOf(`bestmove`) > -1
