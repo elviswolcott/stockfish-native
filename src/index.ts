@@ -235,13 +235,13 @@ class Stockfish {
   }
   async board(): Promise<Board> {
     const rawResponse = await this.do(`d`, endAfterLabel("Checkers"));
-    const [board, data] = split(rawResponse, "\n\n");
-    const labled = parseLabeled(data);
+    const [board, data] = split(rawResponse, EOL.repeat(2));
+    const labeled = parseLabeled(data);
     const pieces = split(board, "\n")
       .filter((line) => line.indexOf(" ") > 0)
       .map((line) => split(trim(line, "\\|"), "|"));
     return {
-      ...labled,
+      ...labeled,
       pieces,
     } as Board;
   }
