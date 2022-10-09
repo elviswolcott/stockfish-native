@@ -1,6 +1,6 @@
 export function getStockfishBinPath(platform: NodeJS.Platform): string {
   if (platform === "win32") {
-    return "./stockfish/engine.exe";
+    return "./stockfish-win/engine.exe";
   }
 
   return "./stockfish/engine";
