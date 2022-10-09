@@ -1,14 +1,17 @@
 import Stockfish from "../index";
+import * as os from "os";
+import { getNullDevicePath, getStockfishBinPath } from "../test-utils";
 
 // TODO: mock out the child process for better testing (particularly with options)
 
 const STARTPOS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 const E4 = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1";
 
+const platform = os.platform();
 let engine: Stockfish;
 
 beforeEach(() => {
-  engine = new Stockfish("./stockfish/engine");
+  engine = new Stockfish(getStockfishBinPath(platform));
 });
 
 afterEach(async () => {
@@ -22,8 +25,8 @@ describe("Stockfish", () => {
   });
   it("supports options", async () => {
     // not sure of a good way to test this that wouldn't be flaky
-    const anotherEngine = new Stockfish("./stockfish/engine", {
-      "Debug Log File": "/dev/null",
+    const anotherEngine = new Stockfish(getStockfishBinPath(platform), {
+      "Debug Log File": getNullDevicePath(platform),
       Contempt: -20,
       "Analysis Contempt": "Both",
       Threads: 1,
@@ -46,7 +49,7 @@ describe("Stockfish", () => {
     });
     const position = await anotherEngine.board();
     expect(position.Fen).toBe(STARTPOS);
-    await anotherEngine.kill();
+    anotherEngine.kill();
   });
 });
 
@@ -109,7 +112,7 @@ describe("search()", () => {
 describe("setoptions()", () => {
   it("runs", async () => {
     await engine.setoptions({
-      "Debug Log File": "/dev/null",
+      "Debug Log File": getNullDevicePath(platform),
       Contempt: -20,
       "Analysis Contempt": "Both",
       Threads: 1,
