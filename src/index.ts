@@ -100,6 +100,7 @@ class Stockfish {
   private partialResponse = "";
   private didQuit = false;
   private listener: null | UCIListener = null;
+  private currentPosition = "";
   // spawn the child process, queue setoption commands, and setup listeners
   constructor(enginePath: string, options: StockfishOptions = {}) {
     this.engine = spawn(enginePath);
@@ -121,13 +122,7 @@ class Stockfish {
         : this.partialResponse;
     });
     // wait for welcome message
-    this.do(
-      null,
-      (response: string) =>
-        response.indexOf(
-          `Stockfish 11 64 POPCNT by T. Romstad, M. Costalba, J. Kiiski, G. Linscott`
-        ) > -1
-    );
+    this.do(null, (response: string) => response.indexOf(`Stockfish`) > -1);
     // set options
     this.setoptions(options);
     // although the contructor is sync, the next command will wait for everything to process
@@ -148,6 +143,10 @@ class Stockfish {
     );
   }
   async search(options: SearchOptions): Promise<string> {
+    // const oldResponse = await this.do(
+    //   "d",
+    //   (response: string) => response.indexOf(`Fen:`) > -1
+    // );
     const { infinite, ponder, searchmoves, ...basicOptions } = options;
     let command = `go`;
     if (infinite) {
@@ -159,16 +158,18 @@ class Stockfish {
     if (searchmoves) {
       command += ` searchmoves ${searchmoves.join(" ")}`;
     }
-    Object.entries(basicOptions).forEach(
-      ([name, value]) => ` ${name} ${value}`
-    );
+    Object.entries(basicOptions).forEach(([name, value]) => {
+      command += ` ${name} ${value}`;
+    });
     const response = await this.do(
       command,
       (response: string) => response.indexOf(`bestmove`) > -1
     );
     const lines = split(response, "\n");
     const last = lines[lines.length - 1];
-    return (last.match(/bestmove[\s]*([a-z,0-9]*)/) || [])[1];
+    const bestMove = (last.match(/bestmove[\s]*([a-z,0-9]*)/) || [])[1];
+    await this.position({ start: this.currentPosition, moves: [bestMove] });
+    return bestMove;
   }
   stop(): void {
     // bypass queuing
@@ -218,6 +219,9 @@ class Stockfish {
     };
   }
   async position(position?: Partial<Position>): Promise<void> {
+    if (position?.start) {
+      this.currentPosition = position.start;
+    }
     const completePosition: Position = {
       moves: [],
       start: "startpos",
@@ -234,9 +238,14 @@ class Stockfish {
     return;
   }
   async board(): Promise<Board> {
-    const rawResponse = await this.do(`d`, endAfterLabel("Checkers"));
-    const [board, data] = split(rawResponse, "\n\n");
+    const rawResponse = await this.do(
+      `d`,
+      (response: string) => response.indexOf(`Fen:`) > -1
+    );
+    const [board, data] = split(rawResponse, /\n\s*\n/);
+
     const labled = parseLabeled(data);
+
     const pieces = split(board, "\n")
       .filter((line) => line.indexOf(" ") > 0)
       .map((line) => split(trim(line, "\\|"), "|"));
